@@ -3,8 +3,8 @@ package sma
 // AC自动机的节点
 type node struct {
 	next map[byte]int
-	over []int
 	deep int
+	over int
 	fail int
 }
 
@@ -55,7 +55,6 @@ func (this *AC) Prepare() {
 		now int
 	}
 	this.State[0].deep = 0
-	this.State[0].fail = -1
 	stack := make([]cell, this.Count)
 	for i, j := 0, 1; j < this.Count; i++ {
 		t := stack[i].now
@@ -95,10 +94,44 @@ func (this *AC) Prepare() {
 	this.State[0].fail = 0
 }
 
+// 搜索第一个匹配的位置，返回起始位置下标和模式串的下标，没有返回-1，-1
+func (this *AC) Index(s []byte) (int, int) {
+	t := 0
+	for i, l := 0, len(s); i < l; {
+		p := &this.State[t]
+		if p.over >= 0 {
+			return i - p.deep, this.over
+		}
+		if j, ok := p.next[s[i]]; ok {
+			i, t = i+1, j
+		} else {
+			t = p.fail
+		}
+	}
+	return -1, -1
+}
+
+// 搜索所有匹配的位置，[2]int成员分别是起始位置下标和模式串的下标，没有返回nil
+func (this *AC) Find(s []byte) (o [2]int) {
+	t := 0
+	for i, l := 0, len(s); i < l; {
+		p := &this.State[t]
+		if p.over >= 0 {
+			o = append(o, [2]int{i - p.deep, this.over})
+		}
+		if j, ok := p.next[s[i]]; ok {
+			i, t = i+1, j
+		} else {
+			t = p.fail
+		}
+	}
+	return
+}
+
 // 为了方便存储Trie树，将之做成了list形式，所以必须使用本方法来提供新的节点
 func (this *AC) newNode() int {
 	n := this.Count
-	this.State = append(this.State, node{})
+	this.State = append(this.State, node{deep: -1, over: -1, fail: -1})
 	this.Count++
 	return n
 }
@@ -107,7 +140,7 @@ func (this *AC) newNode() int {
 func (this *AC) incStr(p, n int, s string) {
 	st := &this.State[n]
 	if s == "" {
-		st.over = append(st.over, p)
+		st.over = p
 		return
 	}
 	head, tail := s[0], s[1:]
