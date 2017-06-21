@@ -100,7 +100,7 @@ func (this *AC) Index(s []byte) (int, int) {
 	for i, l := 0, len(s); i < l; {
 		p := &this.State[t]
 		if p.over >= 0 {
-			return i - p.deep, this.over
+			return i - p.deep, p.over
 		}
 		if j, ok := p.next[s[i]]; ok {
 			i, t = i+1, j
@@ -112,12 +112,12 @@ func (this *AC) Index(s []byte) (int, int) {
 }
 
 // 搜索所有匹配的位置，[2]int成员分别是起始位置下标和模式串的下标，没有返回nil
-func (this *AC) Find(s []byte) (o [2]int) {
+func (this *AC) Find(s []byte) (o [][2]int) {
 	t := 0
 	for i, l := 0, len(s); i < l; {
 		p := &this.State[t]
 		if p.over >= 0 {
-			o = append(o, [2]int{i - p.deep, this.over})
+			o = append(o, [2]int{i - p.deep, p.over})
 		}
 		if j, ok := p.next[s[i]]; ok {
 			i, t = i+1, j
